@@ -12,14 +12,18 @@ import {
   DrawerFooter,
   DrawerClose,
 } from "./ui/drawer";
-import { Form } from "radix-ui";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "./ui/input";
 
 const formSchema = z.object({
   songName: z.string().min(1, "Song name is required"),
-  artist: z.string().min(1, "Artist is required"),
-  songLink: z.string().url("Invalid URL").optional(),
-  songFile: z.instanceof(File).optional(),
+
+  songLink: z.preprocess((val) => (val === "" ? undefined : val), z.string().url("Bitte gib eine echte Url an").optional()),
+  
+  songFile: z.instanceof(File).optional().nullable(),
   wishes: z.string().optional(),
 })
 .refine(
@@ -28,21 +32,37 @@ const formSchema = z.object({
     },
     {
         message: "Bitte entweder einen Link oder eine Datei angeben",
-        path: ["songLink", "songFile"],
+        path: ["songLink"],
     }
 );
 
 export function AddSongs() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-    function handleSongSubmit() {
-        console.log("Song submitted");
+    const form = useForm<z.infer<typeof formSchema>>({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        songName: "",
+        songLink: "",
+        songFile: undefined,
+        wishes: "",
+      },
+    });
+    console.log("Current Form Errors:", form.formState.errors);
+        function onSubmit(values: z.infer<typeof formSchema>) {
+        console.log("Song submitted with valid data", values);
         setIsDrawerOpen(false);
+        form.reset();
     }
+
 
     return (
         <div>
-    <Button className="flex float-right mt-5 cursor-pointer" onClick={() => setIsDrawerOpen(true)}>Füge ein Lied hinzu</Button>
+    <Button 
+      className="flex float-right mt-5 cursor-pointer" 
+      onClick={() => setIsDrawerOpen(true)}>
+        Füge ein Lied hinzu
+    </Button>
 
   <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
   <DrawerContent className="scroll-auto">
@@ -51,17 +71,83 @@ export function AddSongs() {
       <DrawerTitle>Ein Lied hinzufügen</DrawerTitle>
       <DrawerDescription>Fülle bitte alle Felder mit * aus</DrawerDescription>
     </DrawerHeader>
-    <form className="flex flex-col gap-4 p-4">
-        <Form.Root schema={formSchema} onSubmit={handleSongSubmit}>
-            <Form.Field name="songName" label="Song Name" required />
-            <Form.Field name="artist" label="Artist" required />
-            <Form.Field name="songLink" label="Song Link (optional)" type="url" />
-            <Form.Field name="songFile" label="Song File (optional)" type="file" accept=".mp3,.wav" />
-            <Form.Field name="wishes" label="Wishes (optional)" type="textarea" />
-        </Form.Root>
-    </form>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="songName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Lied Name *</FormLabel>
+              <FormControl>
+                <Input placeholder="Never Gonna Give you Up" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+          />
+        <FormField
+          control={form.control}
+          name="songLink"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Song Link</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/song.mp3" {...field} />
+              </FormControl>
+              <FormDescription>
+                Optional: You can provide a link to the song.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+          />
+        <FormField
+          control={form.control}
+          name="songFile"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Song Datei</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      field.onChange(e.target.files[0]);
+                    } else {
+                      field.onChange();
+                    }
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                Optional: Hier kannst du eine bearbeitete Lieddatei abgeben.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+          />
+        <FormField
+          control={form.control}
+          name="wishes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Wünsche</FormLabel>
+              <FormControl>
+                <Input placeholder="Wünsche für das Lied" {...field} />
+              </FormControl>
+              <FormDescription>
+                Optional: Irgendwelche Wünsche für das Lied oder das Licht?
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+          />
+          <Button type="submit">Abspeichern</Button>
+      </form>
+      </Form>
     <DrawerFooter>
-        <Button onClick={handleSongSubmit}>Abspeichern</Button>
       <DrawerClose>
         <Button variant="outline">Abbrechen</Button>
       </DrawerClose>
