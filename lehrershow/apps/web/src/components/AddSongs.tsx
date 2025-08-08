@@ -13,10 +13,13 @@ import {
   DrawerClose,
 } from "./ui/drawer";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { z } from "zod";
+import { set, z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "./ui/input";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Check } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const formSchema = z.object({
   songName: z.string().min(1, "Song name is required"),
@@ -40,7 +43,7 @@ export function AddSongs() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
-      resolver: zodResolver(formSchema),
+      resolver: zodResolver(formSchema) as any,
       defaultValues: {
         songName: "",
         songLink: "",
@@ -53,6 +56,10 @@ export function AddSongs() {
         console.log("Song submitted with valid data", values);
         setIsDrawerOpen(false);
         form.reset();
+        toast.success("Lied erfolgreich hinzugefügt!", {
+            icon: <Check className="h-4 w-4" />,
+            duration: 3000,
+        });
     }
 
 
@@ -96,7 +103,7 @@ export function AddSongs() {
                 <Input placeholder="https://example.com/song.mp3" {...field} />
               </FormControl>
               <FormDescription>
-                Optional: You can provide a link to the song.
+                Optional: Hier kannst du einen Link zum Lied angeben. Z.B. YouTube oder Spotify.
               </FormDescription>
               <FormMessage />
             </FormItem>
