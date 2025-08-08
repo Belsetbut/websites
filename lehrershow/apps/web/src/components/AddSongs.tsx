@@ -20,6 +20,10 @@ import { Input } from "./ui/input";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Check } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import { useMutation } from "convex/react";
+import { useStorage } from "@/hooks/useStorage"; 
+import { api } from "@/convex/_generated/api";
+import { is } from "zod/v4/locales";
 
 const formSchema = z.object({
   songName: z.string().min(1, "Song name is required"),
@@ -41,6 +45,10 @@ const formSchema = z.object({
 
 export function AddSongs() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [uploading, setIsUploading] = useState(false);
+
+    const createSong = useMutation(api.songs.createSong);
+    const {uploadFile, isUploading} = useStorage();
 
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema) as any,
@@ -52,15 +60,35 @@ export function AddSongs() {
       },
     });
     console.log("Current Form Errors:", form.formState.errors);
-        function onSubmit(values: z.infer<typeof formSchema>) {
+
+        async function onSubmit(values: z.infer<typeof formSchema>) {
         console.log("Song submitted with valid data", values);
+        setIsUploading(true);
+        try {
+            let songFileId: string | undefined = undefined;
+            if (values.songFile) {
+              console.log("Uploading song file:", values.songFile);
+              const songFileId = await uploadFile({ file: values.songFile})
+              console.log("Song file uploaded with ID:", songFileId);
+            }
+            await createSong({
+              songName: values.songName,
+              songLink: values.songLink,
+              songFileId: songFileId,
+              whishes: values.wishes,
+            });
         setIsDrawerOpen(false);
         form.reset();
-        toast.success("Lied erfolgreich hinzugefügt!", {
-            icon: <Check className="h-4 w-4" />,
-            duration: 3000,
-        });
-    }
+      toast.success("Lied erfolgreich hinzugefügt!", {
+          icon: <Check className="h-4 w-4" />,
+          duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error adding song:", error);
+      toast.error("Fehler beim Hinzufügen des Liedes. Bitte versuche es später erneut.", {
+        duration: 5000,
+      });
+    }}
 
 
     return (
@@ -151,7 +179,7 @@ export function AddSongs() {
             </FormItem>
           )}
           />
-          <Button type="submit">Abspeichern</Button>
+          <Button type="submit" className={(isUploading ? "opacity-50 cursor-not-allowed" : "")}>Abspeichern</Button>
       </form>
       </Form>
     <DrawerFooter>
@@ -162,5 +190,6 @@ export function AddSongs() {
     </div>
   </DrawerContent>
 </Drawer>
-        </div>
-    )}
+            </div>
+        );
+    }

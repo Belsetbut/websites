@@ -13,9 +13,9 @@ export const createSong = mutation({
     handler: async (ctx, args) => {
         await ctx.db.insert("songs", {
         songName: args.songName,
-        wishes: args.wishes,
+        wishes: args.whishes,
         songLink: args.songLink,
         songFileId: args.songFileId,
-    }),
-    },
-}),
+    });
+    }
+});
