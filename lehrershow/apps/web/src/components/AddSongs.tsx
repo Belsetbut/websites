@@ -18,12 +18,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "./ui/input";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useMutation } from "convex/react";
 import { useStorage } from "@/hooks/useStorage"; 
 import { api } from "@/convex/_generated/api";
-import { is } from "zod/v4/locales";
 
 const formSchema = z.object({
   songName: z.string().min(1, "Song name is required"),
@@ -45,7 +44,7 @@ const formSchema = z.object({
 
 export function AddSongs() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [uploading, setIsUploading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const createSong = useMutation(api.songs.createSong);
     const {uploadFile, isUploading} = useStorage();
@@ -63,19 +62,19 @@ export function AddSongs() {
 
         async function onSubmit(values: z.infer<typeof formSchema>) {
         console.log("Song submitted with valid data", values);
-        setIsUploading(true);
+        setIsSubmitting(true);
         try {
             let songFileId: string | undefined = undefined;
             if (values.songFile) {
               console.log("Uploading song file:", values.songFile);
-              const songFileId = await uploadFile({ file: values.songFile})
+              songFileId = await uploadFile({ file: values.songFile})
               console.log("Song file uploaded with ID:", songFileId);
             }
             await createSong({
               songName: values.songName,
               songLink: values.songLink,
               songFileId: songFileId,
-              whishes: values.wishes,
+              wishes: values.wishes,
             });
         setIsDrawerOpen(false);
         form.reset();
@@ -88,7 +87,10 @@ export function AddSongs() {
       toast.error("Fehler beim Hinzufügen des Liedes. Bitte versuche es später erneut.", {
         duration: 5000,
       });
-    }}
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
 
     return (
@@ -179,7 +181,16 @@ export function AddSongs() {
             </FormItem>
           )}
           />
-          <Button type="submit" className={(isUploading ? "opacity-50 cursor-not-allowed" : "")}>Abspeichern</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Bitte warten...
+              </>
+            ): (
+              "Abspeichern"
+            )}
+              </Button>
       </form>
       </Form>
     <DrawerFooter>

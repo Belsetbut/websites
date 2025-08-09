@@ -1,27 +1,29 @@
+"use client";
+
 import { AddSongs } from "@/components/AddSongs";
 import { Header } from "@/components/header";
-import {Songcard} from "@/components/song-request-card";
-import {allSongCards} from "@/components/SongCard";
-import { Button } from "@/components/ui/button";
+import { Songcard } from "@/components/song-request-card";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export default function App() {
+  const songs = useQuery(api.songs.get);
+
   return (
     <div className="container mx-auto p-4">
-
       <AddSongs />
       <Header/>
-      {allSongCards.map((song) => (
-      <Songcard
-       key={song.id}
-       id={song.id}
-       songName={song.songName}
-       artist={song.artist}
-       songLink={song.songLink}
-       songFile={song.songFile}
-       wishes={song.wishes}
-       editedFile={song.editedFile}
-       feedback={song.feedback}
-      />
+      {songs?.map((song) => (
+        <Songcard
+          key={song._id}
+          id={song._id}
+          songName={song.songName}
+          songLink={song.songLink ?? "No link provided"}
+          songFileId={song.songFileId}
+          wishes={song.wishes}
+          editedFile={song.editedFile ?? undefined}
+          feedback={song.feedback}
+        />
       ))}
     </div>
   );

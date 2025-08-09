@@ -25,8 +25,8 @@ function DrawerPortal({
 
 function DrawerClose({
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
-  return <DrawerPrimitive.Trigger data-slot="drawer-close" {...props} />
+}: React.ComponentProps<typeof DrawerPrimitive.Close>) {
+  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
 }
 
 function DrawerOverlay({
